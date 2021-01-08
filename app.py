@@ -1,4 +1,4 @@
-from flask import Flask,render_template, request
+from flask import Flask,render_template, request,jsonify
 import pickle
 
 import re
@@ -122,5 +122,39 @@ def translation(data):
     response = requests.request("GET", url, headers=headers, data=judul+isi+instansi+sourcelang+targetlang)
 
     return(response.json())
+
+@app.route('/api/', methods=['GET'])
+def api():
+    query_parameters = request.args
+    judul=query_parameters['judul']
+    isi=query_parameters['isi']
+    nama_instansi = predict(judul,isi)
+    data_en={
+            "judul": '\"'+judul+'\"',
+            "isi": '\"'+isi+'\"',
+            "instansi" : '\"'+nama_instansi+'\"',
+            "SourceLanguageCode": '\"id\"',
+            "TargetLanguageCode": '\"en\"'
+        }
+    data_translated_en=translation(data_en)
+    data_tw={
+            "judul": '\"'+judul+'\"',
+            "isi": '\"'+isi+'\"',
+            "instansi" : '\"'+nama_instansi+'\"',
+            "SourceLanguageCode": '\"id\"',
+            "TargetLanguageCode": '\"zh-tw\"'
+        }   
+    data_translated_tw=translation(data_tw)  
+    hasil_akhir={
+        'data_bahasa':{
+            'judul':judul,
+            'isi':isi,
+            'nama_instansi':nama_instansi
+        },
+        'data_english':data_translated_en,
+        'data_chinese':data_translated_tw
+    }
+    return jsonify(hasil_akhir)
+
 if __name__ == "__main__":
     app.run(debug=True)
