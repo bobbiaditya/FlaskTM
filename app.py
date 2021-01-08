@@ -11,6 +11,8 @@ import json
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow import keras
 
+import requests
+
 app = Flask(__name__)
 nlp = spacy.blank('id')
 customize_stop_words=['terima','kasih','kepada','yth','terima kasih','dan','nya','mohon','tindak','lanjut','tindaklanjuti']
@@ -21,18 +23,25 @@ for w in customize_stop_words:
 def index():
     if request.method == 'POST':
         judul = request.form['judul']
-        judul_cleaned = preproses(judul)
-        print(judul_cleaned)
-        judul_seq = tokenize_judul(judul_cleaned)
-
         isi = request.form['isi']
-        isi_cleaned = preproses(isi)
-        print(isi_cleaned)
-        isi_seq = tokenize_isi(isi_cleaned)
-
-        id_instansi = predict(judul_seq,isi_seq)[0]
-        nama_instansi = encode(id_instansi)
-        return render_template("hasil.html",judul=judul,isi=isi,id_instansi=id_instansi,nama_instansi=nama_instansi)
+        nama_instansi = predict(judul,isi)
+        data_en={
+                "judul": '\"'+judul+'\"',
+                "isi": '\"'+isi+'\"',
+                "instansi" : '\"'+nama_instansi+'\"',
+                "SourceLanguageCode": '\"id\"',
+                "TargetLanguageCode": '\"en\"'
+            }
+        data_translated_en=translation(data_en)
+        data_tw={
+                "judul": '\"'+judul+'\"',
+                "isi": '\"'+isi+'\"',
+                "instansi" : '\"'+nama_instansi+'\"',
+                "SourceLanguageCode": '\"id\"',
+                "TargetLanguageCode": '\"zh-tw\"'
+            }   
+        data_translated_tw=translation(data_tw)                
+        return render_template("hasil.html",judul=judul,isi=isi,nama_instansi=nama_instansi,data_translated_en=data_translated_en,data_translated_tw=data_translated_tw)
 
     else:
         return render_template("index.html")
@@ -67,11 +76,20 @@ def tokenize_isi(isi_cleaned):
     isi_seq = pad_sequences(isi_seq, padding='post',maxlen=20)
     return isi_seq
 
-def predict(judul,isi):    
+def predict(judul,isi):
+    judul_cleaned = preproses(judul)
+    judul_seq = tokenize_judul(judul_cleaned)
+
+    isi_cleaned = preproses(isi)
+    isi_seq = tokenize_isi(isi_cleaned)   
+
     model = keras.models.load_model('combined_model.h5')
-    target_pred = model.predict([judul,isi])
+    target_pred = model.predict([judul_seq,isi_seq])
     instance_id = np.argmax(target_pred,axis=1) + 1
-    return instance_id
+    id_instansi = instance_id[0]
+    nama_instansi = encode(id_instansi)
+    return(nama_instansi)
+
 
 def encode(id):
     encoding={
@@ -90,5 +108,19 @@ def encode(id):
         } 
     return encoding[id]
 
+def translation(data):
+    judul="{\r\n"+"  \"judul\": "+data['judul']+",\r\n"
+    isi="  \"isi\": "+data['isi']+",\r\n"
+    instansi="  \"instansi\":"+data['instansi']+",\r\n"
+    sourcelang=" \"SourceLanguageCode\":"+data['SourceLanguageCode']+",\r\n"
+    targetlang=" \"TargetLanguageCode\":"+data['TargetLanguageCode']+"\r\n}"
+    url = "https://8gmj10kr0a.execute-api.us-east-1.amazonaws.com/Dev1"
+    headers = {
+    'Content-Type': 'text/plain'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=judul+isi+instansi+sourcelang+targetlang)
+
+    return(response.json())
 if __name__ == "__main__":
     app.run(debug=True)
