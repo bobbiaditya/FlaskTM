@@ -3,27 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>LAPOR!</title>
 </head>
 <body>
-    judul:{{judul}}
-    <br>
-    isi:{{isi}}
-    <br>
-    nama_instansi:{{nama_instansi}}
-    <br>
-    <br>
-    judul_translated:{{data_translated_en.judul_translated}}
-    <br>
-    isi_translated:{{data_translated_en.isi_translated}}
-    <br>
-    instansi_translated:{{data_translated_en.instansi_translated}}
-    <br>
-    <br>
-    judul_translated:{{data_translated_tw.judul_translated}}
-    <br>
-    isi_translated:{{data_translated_tw.isi_translated}}
-    <br>
-    instansi_translated:{{data_translated_tw.instansi_translated}}
+    <div class="container">
+        <div class="header-area">
+            <div class="navbar-area">
+                <img src="{{url_for('static', filename='images/lapor.png')}}"
+                    style="float:right;width:150px;height:80px;padding-top: 20px;padding-right: 10px">
+            </div>
+        </div>
+        <div style="padding-top: 100px; padding-bottom: 50px;">
+            <div class="card">
+                <div class="card-block">
+                    <h4 class="card-title">Your Report</h4>
+                    <p class="card-text">Title : {{judul}} </p>
+                    <p class="card-text">Content : {{isi}} </p>
+                </div>
+                <div class="card-footer">
+                    <p class="card-text text-right">Agency : {{nama_instansi}}</p>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="padding-bottom: 50px;">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-block">
+                        <h4 class="card-title">English</h4>
+                        <p class="card-text">Title : {{data_translated_en.judul_translated}} </p>
+                        <p class="card-text">Content : {{data_translated_en.isi_translated}} </p>
+                    </div>
+                    <div class="card-footer">
+                        <p class="card-text text-right">Agency : {{data_translated_en.instansi_translated}}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-block">
+                        <h4 class="card-title">Chinese</h4>
+                        <p class="card-text">Title : {{data_translated_tw.judul_translated}} </p>
+                        <p class="card-text">Content : {{data_translated_tw.isi_translated}} </p>
+                    </div>
+                    <div class="card-footer">
+                        <p class="card-text text-right">Agency : {{data_translated_tw.instansi_translated}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
