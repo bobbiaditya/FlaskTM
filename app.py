@@ -22,26 +22,43 @@ for w in customize_stop_words:
 @app.route('/', methods=['POST','GET'])
 def index():
     if request.method == 'POST':
-        judul = request.form['judul']
-        isi = request.form['isi']
-        nama_instansi = predict(judul,isi)
-        data_en={
-                "judul": '\"'+judul+'\"',
-                "isi": '\"'+isi+'\"',
-                "instansi" : '\"'+nama_instansi+'\"',
-                "SourceLanguageCode": '\"id\"',
-                "TargetLanguageCode": '\"en\"'
+        input_lang = request.form['input_lang']
+        output_lang = request.form['output_lang']
+        judul_raw = request.form['judul']
+        isi_raw = request.form['isi']
+        if(input_lang!='id'):
+            data_input={
+                "judul": '\"'+judul_raw+'\"',
+                "isi": '\"'+isi_raw+'\"',
+                "instansi" : '\"'+'blank'+'\"',
+                "SourceLanguageCode": '\"'+input_lang+'\"',
+                "TargetLanguageCode": '\"id\"'
             }
-        data_translated_en=translation(data_en)
-        data_tw={
+            data_translated=translation(data_input)
+            judul = data_translated['judul_translated']
+            isi = data_translated['isi_translated']
+        else:
+            judul = judul_raw
+            isi = isi_raw
+        nama_instansi = predict(judul,isi)
+        print(judul,isi,nama_instansi)
+        data={
                 "judul": '\"'+judul+'\"',
                 "isi": '\"'+isi+'\"',
                 "instansi" : '\"'+nama_instansi+'\"',
                 "SourceLanguageCode": '\"id\"',
-                "TargetLanguageCode": '\"zh-tw\"'
-            }   
-        data_translated_tw=translation(data_tw)                
-        return render_template("hasil.html",judul=judul,isi=isi,nama_instansi=nama_instansi,data_translated_en=data_translated_en,data_translated_tw=data_translated_tw)
+                "TargetLanguageCode": '\"'+output_lang+'\"'
+            }
+        data_translated=translation(data)
+        # data_tw={
+        #         "judul": '\"'+judul+'\"',
+        #         "isi": '\"'+isi+'\"',
+        #         "instansi" : '\"'+nama_instansi+'\"',
+        #         "SourceLanguageCode": '\"id\"',
+        #         "TargetLanguageCode": '\"zh-tw\"'
+        #     }   
+        # data_translated_tw=translation(data_tw)                
+        return render_template("hasil.html",judul=judul_raw,isi=isi_raw,data_translated=data_translated)
 
     else:
         return render_template("index.html")
@@ -116,43 +133,57 @@ def translation(data):
     targetlang=" \"TargetLanguageCode\":"+data['TargetLanguageCode']+"\r\n}"
     url = "https://8gmj10kr0a.execute-api.us-east-1.amazonaws.com/Dev1"
     headers = {
-    'Content-Type': 'text/plain'
+    'Content-Type': 'text/plain',
+    'charset':'utf-8',
     }
 
-    response = requests.request("GET", url, headers=headers, data=judul+isi+instansi+sourcelang+targetlang)
+    response = requests.request("GET", url, headers=headers, data=(judul+isi+instansi+sourcelang+targetlang).encode('utf-8'))
 
     return(response.json())
 
 @app.route('/api/', methods=['GET'])
 def api():
     query_parameters = request.args
-    judul=query_parameters['judul']
-    isi=query_parameters['isi']
-    nama_instansi = predict(judul,isi)
-    data_en={
-            "judul": '\"'+judul+'\"',
-            "isi": '\"'+isi+'\"',
-            "instansi" : '\"'+nama_instansi+'\"',
-            "SourceLanguageCode": '\"id\"',
-            "TargetLanguageCode": '\"en\"'
+    judul_raw=query_parameters['judul']
+    isi_raw=query_parameters['isi']
+    input_lang=query_parameters['input_lang']
+    output_lang=query_parameters['output_lang']
+    if(input_lang!='id'):
+        data_input={
+            "judul": '\"'+judul_raw+'\"',
+            "isi": '\"'+isi_raw+'\"',
+            "instansi" : '\"'+'blank'+'\"',
+            "SourceLanguageCode": '\"'+input_lang+'\"',
+            "TargetLanguageCode": '\"id\"'
         }
-    data_translated_en=translation(data_en)
-    data_tw={
+        data_translated=translation(data_input)
+        judul = data_translated['judul_translated']
+        isi = data_translated['isi_translated']
+    else:
+        judul = judul_raw
+        isi = isi_raw
+    nama_instansi = predict(judul,isi)
+    data={
             "judul": '\"'+judul+'\"',
             "isi": '\"'+isi+'\"',
             "instansi" : '\"'+nama_instansi+'\"',
             "SourceLanguageCode": '\"id\"',
-            "TargetLanguageCode": '\"zh-tw\"'
-        }   
-    data_translated_tw=translation(data_tw)  
+            "TargetLanguageCode": '\"'+output_lang+'\"'
+        }
+    data_translated=translation(data)
+    print(data_translated)
     hasil_akhir={
-        'data_bahasa':{
-            'judul':judul,
-            'isi':isi,
-            'nama_instansi':nama_instansi
+        'data_input':{
+            'Title':judul_raw,
+            'Content':isi_raw,
+            'Input Language':input_lang
         },
-        'data_english':data_translated_en,
-        'data_chinese':data_translated_tw
+        'data_translated':{
+            'Title':data_translated['judul_translated'],
+            'Content':data_translated['isi_translated'],
+            'Government Agency':data_translated['instansi_translated'],
+            'Output Language':data_translated['TargetLanguageCode']
+        }
     }
     return jsonify(hasil_akhir)
 
